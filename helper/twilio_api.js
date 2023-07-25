@@ -17,7 +17,7 @@ async function sendMessage(to, message) {
     }
 
     await client.messages.create({
-      from: 'whatsapp:+14155238886',
+      from: '', //use your twilio number
       body: message,
       to: `whatsapp:${to}`,
     }).then(message => console.log(message));
@@ -28,7 +28,7 @@ async function sendMessage(to, message) {
 
 
 // Example usage:
-const to = '+923052820411'; 
+const to = ''; //Use your whatsapp number 
 const message = 'Hello from Node.js!'; 
 sendMessage(to, message);
 

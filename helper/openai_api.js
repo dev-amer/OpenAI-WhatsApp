@@ -14,7 +14,7 @@ async function chatComplition( prompt ) {
       'https://free.churchless.tech/v1/chat/completions',
       {
         messages: [{ role: 'user', content: prompt }], 
-        max_tokens: 150,
+        max_tokens: 300,
       },
       {
         headers: {
