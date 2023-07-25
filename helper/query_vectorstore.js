@@ -1,10 +1,11 @@
-const { OpenAIEmbeddings } = require('langchain-embeddings');
-const { Chroma } = require('langchain-vectorstores');
-const { ChatOpenAI } = require('langchain-chat_models');
-const { ConversationalRetrievalChain } = require('langchain-chains');
-const { ConversationBufferMemory } = require('langchain-memory');
+const {OpenAIEmbeddings} = require('langchain/embeddings/openai')
+const {ChatOpenAI} = require('langchain/chat_models/openai')
+const {ConversationalRetrievalQAChain} = require('langchain/chains')
+const {ChatMessageHistory} = require('langchain/memory')
+const { Chroma } = require('langchain/vectorstores');
 
-const config = require('./config');
+
+const config = require('../config')
 
 function createConversation() {
   const persistDirectory = config.DB_DIR;
@@ -13,17 +14,17 @@ function createConversation() {
     openai_api_key: config.OPENAI_API_KEY,
   });
 
-  const db = new Chroma({
+  const db = new Chroma ({
     persist_directory: persistDirectory,
     embedding_function: embeddings,
   });
 
-  const memory = new ConversationBufferMemory({
+  const memory = new ChatMessageHistory({
     memory_key: 'chat_history',
     return_messages: false,
   });
 
-  const qa = ConversationalRetrievalChain.from_llm({
+  const qa = ConversationalRetrievalQAChain.from_llm({
     llm: new ChatOpenAI(),
     chain_type: 'stuff',
     retriever: db.as_retriever(),

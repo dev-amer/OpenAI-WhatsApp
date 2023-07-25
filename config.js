@@ -1,4 +1,6 @@
-module.exports = {
-    DB_DIR: 'data/db', // Replace with the directory path for the vectordb storage
-    OPENAI_API_KEY: 'your_openai_api_key', // Replace with your actual OpenAI API key
-  };
+module.exports =
+{
+OUTPUT_DIR :'data/output',
+OPENAI_API_KEY : "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",
+DB_DIR : 'data/db',
+}

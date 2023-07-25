@@ -1,18 +1,14 @@
-const express = require('express');
-const dotenv = require('dotenv');
+const api = require('./src/app');
+// const createIndex = require('./helper/import_documents');
+const port = 5000;
 
-// Load environment variables from .env file
-dotenv.config();
-
-const app = express();
-const port = process.env.PORT || 5000;
-
-// Your app's routes and middleware setup can go here
-// Example:
-app.get('/', (req, res) => {
-  res.send('Hello World!');
+// Start the server
+api.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server listening on http://0.0.0.0:${port}`);
-});
+// Call createIndex function with the desired file path
+// const filePath = 'data/input/sample.pdf'; // Update the file path as needed
+// createIndex(filePath).catch((error) => {
+//   console.error('Error creating index:', error);
+// });
