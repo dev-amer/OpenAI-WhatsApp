@@ -1,12 +1,9 @@
 const axios = require('axios')
-// const {OpenAIApi} = require('openai')
 const dotenv = require('dotenv')
-// Load environment variables from .env file
 dotenv.config();
 
-const openai_api_key = process.env.OPENAI_API_KEY
-// const openai = new OpenAIApi();
 
+const openai_api_key = process.env.OPENAI_API_KEY
 
 async function chatComplition( prompt ) {
   try {
@@ -14,7 +11,7 @@ async function chatComplition( prompt ) {
       'https://free.churchless.tech/v1/chat/completions',
       {
         messages: [{ role: 'user', content: prompt }], 
-        max_tokens: 300,
+        max_tokens: 150000,
       },
       {
         headers: {
