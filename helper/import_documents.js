@@ -11,6 +11,7 @@ const { HNSWLib } = require("langchain/vectorstores/hnswlib");
 const { OpenAIEmbeddings } = require("langchain/embeddings/openai");
 const { RecursiveCharacterTextSplitter } = require("langchain/text_splitter");
 const { normalizeDocuments, fileTypes } = require('../helper/normalize_uploaded_docs');
+const {sendMessage} = require('./twilio_api')
 
 const DOWNLOAD_DIR = "./documents";
 const VECTOR_STORE_PATH = './documents.index/args.json'; // Update the path for the vector store
@@ -29,15 +30,15 @@ const downloadFile = async (url, filename) => {
 };
 
 // API endpoint for document upload
-const uploadDocument =    async (req, res) => {
+const uploadDocument =  async (req, res) => {
   try {
     console.log('Request Body', req.body);
 
-    const { body } = req;
-    const { MediaUrl0 } = body;
+    // Get the MediaUrl0 from the request body
+    const { MediaUrl0, Body } = req.body;
 
     // Extract the original filename from the file URL
-    const originalFilename = path.basename(req.body.Body);
+    const originalFilename = path.basename(Body);
 
     // Generate the timestamp in milliseconds
     const timestamp = Date.now();
@@ -51,10 +52,8 @@ const uploadDocument =    async (req, res) => {
     if (!filePath) {
       return res.send({ success: false, message: 'Error downloading file.' });
     }
-
-    return res.send({ success: true, message: 'File uploaded successfully.', filePath });
   } catch (e) {
-    console.log('Error uploading document:', e);
+    console.log('Error handling combined endpoint:', e);
     return res.send({ success: false, message: 'Something went wrong', e });
   }
 };
@@ -81,12 +80,29 @@ const askQuestion = async (req, res) => {
     const docs = await loader.load();
     console.log("Docs loaded.");
 
+     // Initialize the OpenAI model
+     const model = new OpenAI({
+      modelName: "gpt-3.5-turbo",
+      max_tokens: 150000,
+      top_p: 1,
+      temperature: 0.5,
+      frequency_penalty: 0.2,
+      presence_penalty: 0,
+      n: 1,
+      stream: false,
+      openAIApiKey: process.env.OPENAI_API_KEY
+    });
+
+
     let vectorStore;
 
     if (fs.existsSync(VECTOR_STORE_PATH)) {
       // Load the vector store if it already exists
-      const vectorStoreData = fs.readFileSync(VECTOR_STORE_PATH, 'utf-8');
-      vectorStore = await HNSWLib.load(JSON.parse(vectorStoreData), new OpenAIEmbeddings());
+      // const vectorStoreData = fs.readFileSync(VECTOR_STORE_PATH, 'utf-8');
+      vectorStore = await HNSWLib.load(
+        VECTOR_STORE_PATH, 
+        new OpenAIEmbeddings()
+        );
     } else {
       // If the vector store does not exist, create a new vector store and save it to disk
       fs.mkdirSync(path.dirname(VECTOR_STORE_PATH), { recursive: true });
@@ -105,19 +121,7 @@ const askQuestion = async (req, res) => {
       await vectorStore.save(VECTOR_STORE_PATH);
     }
 
-    // Initialize the OpenAI model
-    const model = new OpenAI({
-      modelName: "gpt-3.5-turbo",
-      max_tokens: 150000,
-      top_p: 1,
-      temperature: 0.5,
-      frequency_penalty: 0.2,
-      presence_penalty: 0,
-      n: 1,
-      stream: false,
-      openAIApiKey: process.env.OPENAI_API_KEY
-    });
-
+   
     // Create the chain for question-answering
     const chain = RetrievalQAChain.fromLLM(model, vectorStore.asRetriever());
 
@@ -125,10 +129,12 @@ const askQuestion = async (req, res) => {
     const langChainRes = await chain.call({ query: question });
 
     // Prepare the response with the question and answer
-    let quesAndAns = { question: question, answer: langChainRes?.text };
+    let quesAndAns = { answer: langChainRes?.text };
 
-    console.log('quesAndAns,', quesAndAns);
-    return res.send({ success: true, data: quesAndAns });
+    console.log('quesAndAns,', quesAndAns.answer);
+    return { status: 1 , response: quesAndAns.answer };
+    
+
   } catch (e) {
     console.log('Error asking question:', e);
     return res.send({ success: false, message: 'Something went wrong', e });

@@ -1,5 +1,5 @@
 const express = require('express');
-const api = express();
+const api = express()
 const bodyParser = require('body-parser');
 const axios = require('axios')
 // const fs = require('fs')
@@ -53,36 +53,52 @@ api.post('/twilio', async (req, res) => {
   // res.sendStatus(200);
 });
 
-// Create an endpoint for uploading files.
-// api.post('/upload', fileUpload.single('file'), async (req, res) => {
-//   try {
-//     console.log('Request Body', req.body)
 
-//     const file = req.file.path;
+// api.post('/chatbot-docs', upload.single('file'), uploadDocument)
 
-//     // Create a Langchain client using axios.
-//     const url = 'https://api.langchain.com/v1/files';
-//     const formData = new FormData();
-//     formData.append('file', fs.createReadStream(file.path));
+// api.post('/ask-question-doc', askQuestion)
 
-//     // Send the file to Langchain.
-//     const response = await axios.post(url, formData, {
-//       headers: { 'Content-Type': 'multipart/form-data' },
-//     });
+// Combined endpoint for document upload and chat
+api.post('/uploadDocument&Chat',upload.single('file'), async (req, res) => {
+  try {
+    // Call the "uploadDocument" function to handle document upload
+    const sender_id = req.body.From
+    const {MediaUrl0, Body} = req.body;
+    if (MediaUrl0) {
+      const uploadResponse = await uploadDocument(req, res);
+      return true
+    }
 
-//     await createIndex(file.path);
+    // Call the "askQuestion" function to handle the question-answering
+    const question = Body;
 
-//     // The file was uploaded successfully.
-//     res.status(200).send(response.data);
-//   } catch (error) {
-//     console.error('Error uploading file:', error);
-//     res.status(500).json({ error: 'An error occurred during file upload.' });
-//   }
-// });
+    let questionResponse
+    console.log("Out Quest", question)
+    if (question) {
+      console.log(question)
+     questionResponse = await askQuestion({ body: { Body: question } }, res); 
+    }
 
-api.post('/chatbot-docs', upload.single('file'), uploadDocument)
+    if (questionResponse.status === 1) {
+      sendMessage(sender_id, questionResponse.response);
+    } else {
+      sendMessage(sender_id, 'Sorry, I couldn\'t generate a valid response at the moment.');
+    }
 
-api.post('/ask-question-doc', askQuestion)
+    // If both document upload and question-answering were successful, combine the responses
+    // const combinedResponse = {
+    //   success: true,
+    //   message: 'Document uploaded and question answered successfully.',
+    //   filePath: uploadResponse.filePath,
+    //   data: questionResponse.data,
+    // };
+
+    // return res.send(combinedResponse);
+  } catch (e) {
+    console.log('Error handling combined endpoint:', e);
+    return res.send({ success: false, message: 'Something went wrong', e });
+  }
+});
 
 
 module.exports = api;
